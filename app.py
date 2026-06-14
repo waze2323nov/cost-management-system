@@ -97,7 +97,13 @@ DATA_FILE = "cms_data.json"
 # ─── Data helpers ───
 def get_june_seed():
     return {
-        "credits": [],
+        "credits": [
+            {"Category": "Business Revenue", "Description": "BUSINESS", "Amount": 8100.0, "Date": "2026-06-19", "Status": "Pending", "Notes": ""},
+            {"Category": "Other Income", "Description": "BUSINESS", "Amount": 1000.0, "Date": "2026-06-19", "Status": "Confirmed", "Notes": ""},
+            {"Category": "EPF / SOCSO", "Description": "3089", "Amount": 0.0, "Date": "2026-06-10", "Status": "Confirmed", "Notes": ""},
+            {"Category": "Ad Revenue", "Description": "G AD CHARGES", "Amount": 3000.0, "Date": "2026-06-10", "Status": "Confirmed", "Notes": ""},
+            {"Category": "Ad Revenue", "Description": "CL AD CHARGES", "Amount": 3300.0, "Date": "2026-06-07", "Status": "Confirmed", "Notes": ""},
+        ],
         "debits": [
             {"Category": "Insurance", "Description": "Great Eastern", "Amount": 250.0, "Date": "2026-06-07", "Status": "Pending", "Notes": "Pay at 7th"},
             {"Category": "Car / Transport", "Description": "Car hire purchase", "Amount": 430.0, "Date": "2026-06-07", "Status": "Pending", "Notes": "Pay at 7th"},
