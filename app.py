@@ -122,7 +122,6 @@ def rows_to_df(rows, kind="credit"):
             "Date": pd.Series([], dtype="object"),
             "Status": pd.Categorical([], categories=STATUS_OPTIONS),
             "Notes": pd.Series([], dtype="str"),
-            "🗑️": pd.Series([], dtype="bool"),
         })
     df = pd.DataFrame(rows)
     for col in ["Category","Description","Amount","Date","Status","Notes"]:
@@ -134,14 +133,10 @@ def rows_to_df(rows, kind="credit"):
     df["Date"] = df["Date"].apply(parse_date)
     df["Notes"] = df["Notes"].fillna("").astype(str)
     df["Description"] = df["Description"].fillna("").astype(str)
-    df["🗑️"] = False
-    return df[["Category","Description","Amount","Date","Status","Notes","🗑️"]]
+    return df[["Category","Description","Amount","Date","Status","Notes"]]
 
 def df_to_rows(df):
     df = df.copy()
-    # Remove rows marked for deletion
-    if "🗑️" in df.columns:
-        df = df[~df["🗑️"]].drop(columns=["🗑️"])
     df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce").fillna(0.0)
     df["Date"] = df["Date"].apply(lambda x: x.isoformat() if pd.notna(x) and x is not None else "")
     df["Notes"] = df["Notes"].fillna("").astype(str)
@@ -193,7 +188,6 @@ def get_col_config(cats):
         "Date": st.column_config.DateColumn("Date", format="YYYY-MM-DD"),
         "Status": st.column_config.SelectboxColumn("Status", options=STATUS_OPTIONS, required=True),
         "Notes": st.column_config.TextColumn("Notes"),
-        "🗑️": st.column_config.CheckboxColumn("🗑️", help="Check to delete this row", default=False),
     }
 
 # ═════════════════════════════════════
@@ -229,7 +223,7 @@ if page == "Monthly Ledger":
 
     # ── Credits table ──
     st.markdown('<p class="section-credit">✅ Credits (Inflows)</p>', unsafe_allow_html=True)
-    st.caption("Check 🗑️ to delete a row, then click outside the table to confirm.")
+    st.caption("To delete: select row checkbox on the left → press Delete key")
     credit_df = rows_to_df(credit_rows, "credit")
     edited_credits = st.data_editor(
         credit_df, num_rows="dynamic", use_container_width=True,
@@ -242,7 +236,7 @@ if page == "Monthly Ledger":
 
     # ── Debits table ──
     st.markdown('<p class="section-debit">🔻 Debits (Outflows)</p>', unsafe_allow_html=True)
-    st.caption("Check 🗑️ to delete a row, then click outside the table to confirm.")
+    st.caption("To delete: select row checkbox on the left → press Delete key")
     debit_df = rows_to_df(debit_rows, "debit")
     edited_debits = st.data_editor(
         debit_df, num_rows="dynamic", use_container_width=True,
