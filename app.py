@@ -184,7 +184,7 @@ def credit_col_config():
         "✓": st.column_config.CheckboxColumn("✓", help="Select for sum", width="small", default=False),
         "Category": st.column_config.SelectboxColumn("Category", options=CREDIT_CATS, required=True, width="medium"),
         "Description": st.column_config.TextColumn("Description", width="medium"),
-        "Amount": st.column_config.NumberColumn("Amount (RM)", min_value=0, format="%.2f", width="small"),
+        "Amount": st.column_config.NumberColumn("RM (+)", min_value=0, format="%.2f", width="small"),
         "Date": st.column_config.DateColumn("Date", format="YYYY-MM-DD", width="small"),
         "Status": st.column_config.SelectboxColumn("Status", options=STATUS_OPTIONS, required=True, width="small"),
         "Notes": st.column_config.TextColumn("Notes", width="medium"),
@@ -195,7 +195,7 @@ def debit_col_config():
         "✓": st.column_config.CheckboxColumn("✓", help="Select for sum", width="small", default=False),
         "Category": st.column_config.SelectboxColumn("Category", options=DEBIT_CATS, required=True, width="medium"),
         "Description": st.column_config.TextColumn("Description", width="medium"),
-        "Amount": st.column_config.NumberColumn("Amount (RM)", max_value=0, format="%.2f", width="small"),
+        "Amount": st.column_config.NumberColumn("RM (-)", max_value=0, format="%.2f", width="small"),
         "Date": st.column_config.DateColumn("Date", format="YYYY-MM-DD", width="small"),
         "Status": st.column_config.SelectboxColumn("Status", options=STATUS_OPTIONS, required=True, width="small"),
         "Notes": st.column_config.TextColumn("Notes", width="medium"),
@@ -231,8 +231,10 @@ if page == "Monthly Ledger":
     st.markdown('<p class="section-credit">✅ Credits (Inflows) — Positive (+)</p>', unsafe_allow_html=True)
     st.caption("Tick ✓ to include in Selection Sum · Amounts are POSITIVE")
     credit_df = rows_to_df(credit_rows, "credit")
+    credit_height = max(35 + (len(credit_df) + 2) * 35 + 3, 120)
     edited_credits = st.data_editor(
         credit_df, num_rows="dynamic", use_container_width=True,
+        height=credit_height,
         column_config=credit_col_config(),
         column_order=["✓","Category","Description","Amount","Date","Status","Notes"],
         key=f"credits_{selected_month}",
@@ -245,8 +247,10 @@ if page == "Monthly Ledger":
     st.markdown('<p class="section-debit">🔻 Debits (Outflows) — Negative (-)</p>', unsafe_allow_html=True)
     st.caption("Tick ✓ to include in Selection Sum · Amounts are auto NEGATIVE")
     debit_df = rows_to_df(debit_rows, "debit")
+    debit_height = max(35 + (len(debit_df) + 2) * 35 + 3, 120)
     edited_debits = st.data_editor(
         debit_df, num_rows="dynamic", use_container_width=True,
+        height=debit_height,
         column_config=debit_col_config(),
         column_order=["✓","Category","Description","Amount","Date","Status","Notes"],
         key=f"debits_{selected_month}",
@@ -257,37 +261,39 @@ if page == "Monthly Ledger":
     edited_debits_save.loc[edited_debits_save["Amount"] == 0, "Amount"] = 0.0
     st.session_state.data[selected_month]["debits"] = df_to_rows(edited_debits_save, "debit")
 
-    # ── SELECTION SUM ──
+    # ── SELECTION SUM — always visible ──
     sel_c = edited_credits[edited_credits["✓"] == True]["Amount"].sum() if "✓" in edited_credits.columns else 0
-    sel_d = edited_debits[edited_debits["✓"] == True]["Amount"].sum() if "✓" in edited_debits.columns else 0  # already negative
+    sel_d = edited_debits[edited_debits["✓"] == True]["Amount"].sum() if "✓" in edited_debits.columns else 0
     sel_cc = int(edited_credits["✓"].sum()) if "✓" in edited_credits.columns else 0
     sel_dc = int(edited_debits["✓"].sum()) if "✓" in edited_debits.columns else 0
-    sel_net = sel_c + sel_d  # positive + negative = net
+    sel_net = sel_c + sel_d
     sel_total_count = sel_cc + sel_dc
 
-    if sel_total_count > 0:
-        st.markdown("---")
-        s1, s2, s3 = st.columns(3)
-        with s1:
-            st.markdown(f"""<div class="sum-box">
-                <div class="label">Selected Credits (+)</div>
-                <div class="value" style="color:#4ade80">+ RM {sel_c:,.2f}</div>
-                <div class="detail">{sel_cc} item(s)</div>
-            </div>""", unsafe_allow_html=True)
-        with s2:
-            st.markdown(f"""<div class="sum-box">
-                <div class="label">Selected Debits (-)</div>
-                <div class="value" style="color:#f87171">RM {sel_d:,.2f}</div>
-                <div class="detail">{sel_dc} item(s)</div>
-            </div>""", unsafe_allow_html=True)
-        with s3:
-            net_color = "#4ade80" if sel_net >= 0 else "#f87171"
-            net_sign = "+" if sel_net >= 0 else ""
-            st.markdown(f"""<div class="sum-box">
-                <div class="label">Net Total (Credits + Debits)</div>
-                <div class="value" style="color:{net_color}">{net_sign} RM {sel_net:,.2f}</div>
-                <div class="detail">{sel_total_count} item(s) · Credits - Debits</div>
-            </div>""", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("#### 📊 Selection Sum")
+    if sel_total_count == 0:
+        st.caption("Tick ✓ on any row above to start summing — works across both tables")
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        st.markdown(f"""<div class="sum-box">
+            <div class="label">Selected Credits (+)</div>
+            <div class="value" style="color:#4ade80">+ RM {sel_c:,.2f}</div>
+            <div class="detail">{sel_cc} item(s)</div>
+        </div>""", unsafe_allow_html=True)
+    with s2:
+        st.markdown(f"""<div class="sum-box">
+            <div class="label">Selected Debits (-)</div>
+            <div class="value" style="color:#f87171">RM {sel_d:,.2f}</div>
+            <div class="detail">{sel_dc} item(s)</div>
+        </div>""", unsafe_allow_html=True)
+    with s3:
+        net_color = "#4ade80" if sel_net >= 0 else "#f87171"
+        net_sign = "+" if sel_net >= 0 else ""
+        st.markdown(f"""<div class="sum-box">
+            <div class="label">Net Total (Credits + Debits)</div>
+            <div class="value" style="color:{net_color}">{net_sign} RM {sel_net:,.2f}</div>
+            <div class="detail">{sel_total_count} item(s) selected</div>
+        </div>""", unsafe_allow_html=True)
 
     # Category breakdown
     new_c = edited_credits["Amount"].sum() if not edited_credits.empty else 0
