@@ -746,7 +746,8 @@ def find_duplicate(entry, data):
     return False
 
 
-SIDE_VISIBLE_ROWS = 10
+SIDE_ORDER = ["Sel", "Description", "Amount", "Date", "Status", "Lent", "Notes"]
+VISIBLE_ROWS = 10
 
 
 def merge_edits(base_df, editor_states):
