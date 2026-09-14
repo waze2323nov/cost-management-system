@@ -746,9 +746,7 @@ def find_duplicate(entry, data):
     return False
 
 
-ORDER = ["Sel","Description","Amount","Date","Status","Lent","Notes"]
-SIDE_ORDER = ["Sel","Description","Amount","Date","Status","Notes"]
-VISIBLE_ROWS = 10
+SIDE_VISIBLE_ROWS = 10
 
 
 def merge_edits(base_df, editor_states):
@@ -945,7 +943,7 @@ if page == "Monthly Ledger":
                 "Notes": pv_notes,
                 "Lent": bool(pv_lent),
             })
-            for k in ("credits_", "debits_", "sbs_credits_", "sbs_debits_"):
+            for k in ("credits_", "debits_"):
                 st.session_state.pop(k + pv_month, None)
             save_data(st.session_state.data)
             st.session_state["cmd_pending"] = None
@@ -999,7 +997,7 @@ if page == "Monthly Ledger":
                             })
                             added += 1
                         break
-                for k in ("credits_", "debits_", "sbs_credits_", "sbs_debits_"):
+                for k in ("credits_", "debits_"):
                     st.session_state.pop(k + active, None)
                 save_data(st.session_state.data)
                 st.success("Added {} item(s) to {}.".format(added, active))
@@ -1044,50 +1042,30 @@ if page == "Monthly Ledger":
             '<span class="t-val" style="color:{}">{} RM {:,.2f}</span></div>'.format(
                 n, "" if n == 1 else "s", colr, sign, tot), unsafe_allow_html=True)
 
-    tab_d, tab_c, tab_both = st.tabs(["Money OUT", "Money IN", "Side by side"])
-
-    with tab_d:
+    # Single side-by-side view: money out on the left, money in on the right.
+    st.caption("Money out on the left, money in on the right. "
+               "On a narrow screen they stack: money out first, then money in.")
+    sb1, sb2 = st.columns(2)
+    with sb1:
         st.markdown('<p class="section-debit">Money OUT - counted as negative</p>',
                     unsafe_allow_html=True)
         st.data_editor(debit_df, num_rows="dynamic", use_container_width=True,
                        height=table_height(debit_df),
                        column_config=col_config(DEBIT_CATS, "RM (-)"),
-                       column_order=ORDER, key="debits_" + active)
+                       column_order=SIDE_ORDER, key="debits_" + active)
         total_bar(debit_df, "debit")
-
-    with tab_c:
+    with sb2:
         st.markdown('<p class="section-credit">Money IN - counted as positive</p>',
                     unsafe_allow_html=True)
         st.data_editor(credit_df, num_rows="dynamic", use_container_width=True,
                        height=table_height(credit_df),
                        column_config=col_config(CREDIT_CATS, "RM (+)",
                                                 lent_help="Repayment of money you lent out"),
-                       column_order=ORDER, key="credits_" + active)
+                       column_order=SIDE_ORDER, key="credits_" + active)
         total_bar(credit_df, "credit")
 
-    with tab_both:
-        st.caption("On a narrow screen these stack: money out first, then money in.")
-        sb1, sb2 = st.columns(2)
-        with sb1:
-            st.markdown('<p class="section-debit">Money OUT</p>', unsafe_allow_html=True)
-            st.data_editor(debit_df, num_rows="dynamic", use_container_width=True,
-                           height=table_height(debit_df),
-                           column_config=col_config(DEBIT_CATS, "RM (-)"),
-                           column_order=SIDE_ORDER, key="sbs_debits_" + active)
-            total_bar(debit_df, "debit")
-        with sb2:
-            st.markdown('<p class="section-credit">Money IN</p>', unsafe_allow_html=True)
-            st.data_editor(credit_df, num_rows="dynamic", use_container_width=True,
-                           height=table_height(credit_df),
-                           column_config=col_config(CREDIT_CATS, "RM (+)",
-                                                    lent_help="Repayment of money you lent out"),
-                           column_order=SIDE_ORDER, key="sbs_credits_" + active)
-            total_bar(credit_df, "credit")
-
-    ec = merge_edits(credit_df, [st.session_state.get("credits_" + active),
-                                 st.session_state.get("sbs_credits_" + active)])
-    ed = merge_edits(debit_df, [st.session_state.get("debits_" + active),
-                                st.session_state.get("sbs_debits_" + active)])
+    ec = merge_edits(credit_df, [st.session_state.get("credits_" + active)])
+    ed = merge_edits(debit_df, [st.session_state.get("debits_" + active)])
 
     st.session_state.data[active]["credits"] = df_to_rows(ec, "credit")
     st.session_state.data[active]["debits"] = df_to_rows(ed, "debit")
@@ -1265,7 +1243,7 @@ if page == "Monthly Ledger":
                 st.session_state.data.setdefault(tm, {"credits": [], "debits": []})
                 st.session_state.data[tm]["credits"] = st.session_state.data[tm].get("credits", []) + pc
                 st.session_state.data[tm]["debits"] = st.session_state.data[tm].get("debits", []) + pdd
-                for k in ("credits_", "debits_", "sbs_credits_", "sbs_debits_"):
+                for k in ("credits_", "debits_"):
                     st.session_state.pop(k + tm, None)
             save_data(st.session_state.data)
             st.success("Copied {} item(s) into {} month(s): {}".format(
